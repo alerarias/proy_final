@@ -1,0 +1,38 @@
+#map {
+  width:  800px;
+	height: 700px;
+}
+
+p {
+    color:darkblue;
+    font-size:150%;
+}
+
+h1 {
+    color:#B71427;
+	background-color:001a00;
+	font-style:italic;
+}            
+h2 {
+    color:00ff00;
+} 
+
+
+body {
+    background-color:#C1E1A6;
+    color:white;
+    margin:0 10px 0 0;
+    border:12px solid;
+}           
+
+table, th, td {border: 1px solid blue; 
+}
+
+table {
+    width: 100%;
+}
+
+th {
+    height: 50px;
+	font-size:150%;
+}
