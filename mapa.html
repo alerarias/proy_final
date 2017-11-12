@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Clientes y granjas ostricultura CR</title>
+
+    <meta charset="UTF-8" />
+	
+    <!-- Referencia a estilos personales -->
+    <link rel="stylesheet" href="css/estilos.css">
+
+    <!-- Referencia al código fuente y a los estilos de Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js" integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log==" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ==" crossorigin=""/>
+	  
+    <!-- Referencia al código fuente y a los estilos del complemento MousePosition -->	 
+    <script type="text/javascript" src="https://cdn.rawgit.com/ardhi/Leaflet.MousePosition/master/src/L.Control.MousePosition.js"></script>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/ardhi/Leaflet.MousePosition/master/src/L.Control.MousePosition.css"/>	  
+	
+	<!-- Referencia al complemento Leaflet-providers -->	 
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-providers/1.1.7/leaflet-providers.js"></script>
+	
+  </head>
+
+  <body>
+    <nav>
+	<a href="index.html" target="_blank">Principal</a>
+	<a href="granjas.html" target="_blank">Granjas</a>
+	Mapa
+	</nav>
+	
+    <h1>Mapa de granjas y clientes dedicados a la ostricultura en Costa Rica</h1>
+    <div id='map'></div>
+
+    <script src="js/clientesWGS84.js" type="text/javascript"></script>
+	<script src="js/granjasWGS84.js" type="text/javascript"></script>
+
+
+    <script>
+      var mapa = L.map('map').setView([9.7, -84], 8);
+      var osm  = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+      });
+      osm.addTo(mapa);
+	  
+	  
+      // Capa OSM Surfer de tipo L.tileLayer definida con el complemento Leaflet-providers
+      var osmS = L.tileLayer('https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
+	maxZoom: 20,
+	attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+});
+      osmS.addTo(mapa);
+	  
+	  L.control.scale({imperial:false}).addTo(mapa);
+	  
+
+      // retorna un color con base en la cantidad de especies
+      function color(d) {
+	return d > 500000000 ? '#7f2704' :
+	       d > 400000000 ? '#d14501' :
+	       d > 300000000 ? '#f67722' :
+		   d > 200000000 ? '#fdac67' :
+	       d > 100000000 ? '#fedbb7' :
+		        '#fff5eb';
+      }	    
+      function areaTotal(feature, layer) {
+	var popupContent = "";
+	if (feature.properties && feature.properties.area) {
+	  popupContent += "Área de la granja: " + (feature.properties.area) + " m<sup>2</sup>";
+	} else {
+	  popupContent += 0; 
+	}
+	layer.bindPopup(popupContent);
+      }	 	  
+	    
+      var granjas2017 = L.geoJson(granjas, {
+        style: function (feature) {
+	  return {
+	    weight: 2,
+	    opacity: 1,
+	    color: 'white',
+	    dashArray: '3',
+	    fillOpacity: 0.7,		  
+            fillColor: color(feature.properties.area)
+          };
+        },
+	      
+	onEachFeature: areaTotal
+      })
+      granjas2017.addTo(mapa);
+	  
+	  
+	  function infoCliente(feature, layer) {
+	    var popupContent = "";
+	    if (feature.properties && feature.properties.nombre) {
+	  popupContent += "Nombre del cliente: " + feature.properties.nombre;
+	}
+	layer.bindPopup(popupContent);
+      }
+	  
+      var clientes2017 = L.geoJson(clientes, {
+        style: function (feature) {
+	  return {
+            fillColor: '#0000ff', 
+            color: '#ffffff'
+          };
+        },
+        
+	pointToLayer: function (feature, latlng) {
+	  return L.circleMarker(latlng, {
+	    radius: 3,
+	    fillColor: "#ff7800",
+	    color: "#000",
+	    weight: 1,
+	    opacity: 1,
+	    fillOpacity: 0.8
+	  });
+	},
+	      
+	onEachFeature: infoCliente
+      })
+      clientes2017.addTo(mapa);	 
+
+	  
+	  
+	  var wms1Layer = L.tileLayer.wms('http://geos.snitcr.go.cr/be/IGN_50/wms?', {
+    layers: 'IGN_50:limiteprovincial_50k'
+}).addTo(mapa);
+
+	  var wms2Layer = L.tileLayer.wms('http://geos.snitcr.go.cr/be/IGN_50/wms?', {
+    layers: 'IGN_50:limitedistrital_50k'
+}).addTo(mapa);
+
+
+      var baseLayers = {
+	"OpenStreetMap": osm,
+	"OSM Sufer": osmS,
+      };
+      var overlays = {
+	"Granjas": granjas2017,
+	"Clientes": clientes2017,
+	"Distritos": wms2Layer,
+	"Provincias": wms1Layer
+      };
+      L.control.layers(baseLayers, overlays).addTo(mapa);
+	    
+      L.control.mousePosition().addTo(mapa);
+
+    </script>
+	
+	<h1>Imágenes ilustrativas</h1>
+
+	<figure>	
+		<img src="img/2.jpg" alt="IMG2" height="346" width="500"/>
+		<cite>Inspección de calidad</cite> by Rebeca Quesada Cespedes. Obtenida en 2015.
+	</figure>
+	
+	<h1>Conclusiones</h1>
+	
+	<p>Este proyecto desea implementar las bases que sean necesarias para que la gestión de información existente y la que se generará en un futuro pueda ser utilizada con mayor potencial y compartida con el ámbito 
+	que le rodea.
+	
+	<p>El proyecto intenta ordenar información existente que se ha generado durante años y que únicamente ha sido tabulada, no así implementada en una gestión integral para disponer de ella, al tratarse de varios 
+	laboratorios e instituciones que puedan necesitarla.
+	
+	<p>Al existir este ordenamiento de la información existente, le damos un valor agregado a partir del momento que se comparte la misma con otras instituciones, ya que desde su punto de vista puede iniciar 
+	proyectos en su ámbito, como por ejemplo el Instituto Mixto de Ayuda Social (IMAS) podría dosificar la entrega de ayudas económicas en tiempo de veda y proponer a los beneficiarios una forma de trabajo con 
+	rendimientos considerables.
+	
+  </body>
+</html>
